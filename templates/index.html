@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>精油管理アプリ</title>
+
+  <!-- Bootstrap CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Choices.js CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
+</head>
+<body>
+<div class="container my-4">
+
+  <h1 class="mb-4 text-center">精油管理アプリ</h1>
+
+  <!-- 登録フォーム -->
+  <div class="card mb-4">
+    <div class="card-header">精油登録フォーム</div>
+    <div class="card-body">
+      <form method="POST">
+        <input type="hidden" name="original_name" value="{{ edit_oil.name if edit_oil }}">
+        <div class="row g-3">
+          <!-- 和名・英名・学名 -->
+          <div class="col-md-4">
+            <label class="form-label">和名</label>
+            <input type="text" class="form-control" name="name_ja" required value="{{ edit_oil.name if edit_oil }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">英名</label>
+            <input type="text" class="form-control" name="name_en" value="{{ edit_oil['英名'] if edit_oil }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">学名</label>
+            <input type="text" class="form-control" name="name_lat" value="{{ edit_oil['学名'] if edit_oil }}">
+          </div>
+
+          <!-- ドロップダウン -->
+          <div class="col-md-3">
+            <label class="form-label">メーカー</label>
+            <select class="form-select" name="manufacturer">
+              {% for m in manufacturer_list %}
+                <option value="{{ m }}" {% if edit_oil and edit_oil['メーカー']==m %}selected{% endif %}>{{ m }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-2">
+            <label class="form-label">容量</label>
+            <select class="form-select" name="volume">
+              {% for v in volume_list %}
+                <option value="{{ v }}" {% if edit_oil and edit_oil['容量']==v %}selected{% endif %}>{{ v }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">科名</label>
+            <select class="form-select" name="family">
+              {% for f in family_list %}
+                <option value="{{ f }}" {% if edit_oil and edit_oil['科名']==f %}selected{% endif %}>{{ f }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">産地（複数選択可）</label>
+            <select class="form-select multi-select" name="origin" multiple>
+              {% for o in origin_list %}
+                <option value="{{ o }}" {% if edit_oil and o in edit_oil['産地'] %}selected{% endif %}>{{ o }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-2">
+            <label class="form-label">抽出部位</label>
+            <select class="form-select" name="part">
+              {% for p in part_list %}
+                <option value="{{ p }}" {% if edit_oil and edit_oil['抽出部位']==p %}selected{% endif %}>{{ p }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">抽出方法</label>
+            <select class="form-select" name="method">
+              {% for m in method_list %}
+                <option value="{{ m }}" {% if edit_oil and edit_oil['抽出方法']==m %}selected{% endif %}>{{ m }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">香調</label>
+            <select class="form-select" name="fragrance">
+              {% for f in fragrance_list %}
+                <option value="{{ f }}" {% if edit_oil and edit_oil['香調']==f %}selected{% endif %}>{{ f }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">ノート（複数選択可）</label>
+            <select class="form-select multi-select" name="note" multiple>
+              {% for n in note_list %}
+                <option value="{{ n }}" {% if edit_oil and n in edit_oil['ノート'] %}selected{% endif %}>{{ n }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-12 text-center mt-3">
+            <button type="submit" class="btn btn-primary">登録</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 登録済み一覧 -->
+  <div class="card">
+    <div class="card-header">登録済み精油一覧</div>
+    <div class="card-body table-responsive">
+      <table class="table table-striped table-bordered">
+        <thead class="table-light">
+          <tr>
+            <th>和名</th>
+            <th>英名</th>
+            <th>学名</th>
+            <th>メーカー</th>
+            <th>容量</th>
+            <th>科名</th>
+            <th>産地</th>
+            <th>抽出部位</th>
+            <th>抽出方法</th>
+            <th>香調</th>
+            <th>ノート</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for name, info in oils.items() %}
+          <tr>
+            <td>{{ name }}</td>
+            <td>{{ info["英名"] }}</td>
+            <td>{{ info["学名"] }}</td>
+            <td>{{ info["メーカー"] }}</td>
+            <td>{{ info["容量"] }}</td>
+            <td>{{ info["科名"] }}</td>
+            <td>{{ info["産地"] | join(", ") }}</td>
+            <td>{{ info["抽出部位"] }}</td>
+            <td>{{ info["抽出方法"] }}</td>
+            <td>{{ info["香調"] }}</td>
+            <td>{{ info["ノート"] | join(", ") }}</td>
+            <td>
+              <a href="{{ url_for('edit', name_ja=name) }}" class="btn btn-sm btn-warning mb-1">編集</a>
+              <a href="{{ url_for('delete', name_ja=name) }}" class="btn btn-sm btn-danger" onclick="return confirm('削除しますか？');">削除</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Choices.js -->
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const multiSelects = document.querySelectorAll('.multi-select');
+    multiSelects.forEach(sel => {
+      new Choices(sel, {
+        removeItemButton: true, // 選択済みタグに✕
+        searchEnabled: true,    // 検索可能
+        placeholderValue: "選択してください"
+      });
+    });
+  });
+</script>
+</body>
+</html>
