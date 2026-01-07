@@ -10,6 +10,33 @@
 
   <!-- Choices.js CDN -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
+
+  <!-- カスタムCSS -->
+  <style>
+    body {
+      writing-mode: horizontal-tb; /* 横書き */
+      word-break: break-word;
+    }
+
+    table {
+      table-layout: fixed; /* 列幅固定 */
+      word-break: break-word;
+    }
+
+    select, option {
+      white-space: normal; /* 長い文字は折り返す */
+    }
+
+    .choices {
+      overflow-x: auto; /* 横スクロール */
+      min-width: 100px;
+    }
+
+    /* スマホ表示用にテーブルをスクロール可能に */
+    .table-responsive {
+      overflow-x: auto;
+    }
+  </style>
 </head>
 <body>
 <div class="container my-4">
@@ -23,6 +50,7 @@
       <form method="POST">
         <input type="hidden" name="original_name" value="{{ edit_oil.name if edit_oil }}">
         <div class="row g-3">
+
           <!-- 和名・英名・学名 -->
           <div class="col-md-4">
             <label class="form-label">和名</label>
@@ -74,11 +102,12 @@
             </select>
           </div>
 
-          <div class="col-md-2">
-            <label class="form-label">抽出部位</label>
-            <select class="form-select" name="part">
+          <!-- 抽出部位も複数選択に変更 -->
+          <div class="col-md-4">
+            <label class="form-label">抽出部位（複数選択可）</label>
+            <select class="form-select multi-select" name="part" multiple>
               {% for p in part_list %}
-                <option value="{{ p }}" {% if edit_oil and edit_oil['抽出部位']==p %}selected{% endif %}>{{ p }}</option>
+                <option value="{{ p }}" {% if edit_oil and p in edit_oil['抽出部位'] %}selected{% endif %}>{{ p }}</option>
               {% endfor %}
             </select>
           </div>
@@ -149,7 +178,7 @@
             <td>{{ info["容量"] }}</td>
             <td>{{ info["科名"] }}</td>
             <td>{{ info["産地"] | join(", ") }}</td>
-            <td>{{ info["抽出部位"] }}</td>
+            <td>{{ info["抽出部位"] | join(", ") }}</td>
             <td>{{ info["抽出方法"] }}</td>
             <td>{{ info["香調"] }}</td>
             <td>{{ info["ノート"] | join(", ") }}</td>
@@ -175,8 +204,8 @@
     const multiSelects = document.querySelectorAll('.multi-select');
     multiSelects.forEach(sel => {
       new Choices(sel, {
-        removeItemButton: true, // 選択済みタグに✕
-        searchEnabled: true,    // 検索可能
+        removeItemButton: true,
+        searchEnabled: true,
         placeholderValue: "選択してください"
       });
     });
