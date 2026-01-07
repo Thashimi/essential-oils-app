@@ -1,22 +1,16 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>精油管理アプリ</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>精油管理アプリ</title>
 
-  <!-- Bootstrap -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
-  <!-- Choices.js -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
-
-  <!-- カスタムCSS -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
 <div class="container my-4">
-
   <h1 class="mb-4 text-center">精油管理アプリ</h1>
 
   <!-- 登録フォーム -->
@@ -24,10 +18,8 @@
     <div class="card-header bg-primary text-white">精油登録フォーム</div>
     <div class="card-body">
       <form method="POST">
-        <input type="hidden" name="original_name" value="{{ edit_oil.name_ja if edit_oil }}">
+        <input type="hidden" name="original_id" value="{{ edit_oil.id if edit_oil }}">
         <div class="row g-3">
-
-          <!-- 和名・英名・学名 -->
           <div class="col-md-4">
             <label class="form-label">和名</label>
             <input type="text" class="form-control" name="name_ja" required value="{{ edit_oil.name_ja if edit_oil }}">
@@ -41,7 +33,7 @@
             <input type="text" class="form-control" name="name_lat" value="{{ edit_oil.scientific_name if edit_oil }}">
           </div>
 
-          <!-- ドロップダウン -->
+          <!-- ドロップダウン例 -->
           <div class="col-md-3">
             <label class="form-label">メーカー</label>
             <select class="form-select" name="manufacturer">
@@ -73,7 +65,7 @@
             <label class="form-label">産地（複数選択可）</label>
             <select class="form-select multi-select" name="origin" multiple>
               {% for o in origin_list %}
-                <option value="{{ o }}" {% if edit_oil and o in (edit_oil.origin.split(',') if edit_oil.origin else []) %}selected{% endif %}>{{ o }}</option>
+                <option value="{{ o }}" {% if edit_oil and o in (edit_oil.origin or "").split(',') %}selected{% endif %}>{{ o }}</option>
               {% endfor %}
             </select>
           </div>
@@ -82,7 +74,7 @@
             <label class="form-label">抽出部位（複数選択可）</label>
             <select class="form-select multi-select" name="part" multiple>
               {% for p in part_list %}
-                <option value="{{ p }}" {% if edit_oil and p in (edit_oil.parts.split(',') if edit_oil.parts else []) %}selected{% endif %}>{{ p }}</option>
+                <option value="{{ p }}" {% if edit_oil and p in (edit_oil.parts or "").split(',') %}selected{% endif %}>{{ p }}</option>
               {% endfor %}
             </select>
           </div>
@@ -109,7 +101,7 @@
             <label class="form-label">ノート（複数選択可）</label>
             <select class="form-select multi-select" name="note" multiple>
               {% for n in note_list %}
-                <option value="{{ n }}" {% if edit_oil and n in (edit_oil.notes.split(',') if edit_oil.notes else []) %}selected{% endif %}>{{ n }}</option>
+                <option value="{{ n }}" {% if edit_oil and n in (edit_oil.notes or "").split(',') %}selected{% endif %}>{{ n }}</option>
               {% endfor %}
             </select>
           </div>
@@ -129,6 +121,7 @@
       <table class="table table-striped table-bordered">
         <thead class="table-light">
           <tr>
+            <th>ID</th>
             <th>和名</th>
             <th>英名</th>
             <th>学名</th>
@@ -146,6 +139,7 @@
         <tbody>
           {% for oil in oils %}
           <tr>
+            <td>{{ oil.id }}</td>
             <td>{{ oil.name_ja }}</td>
             <td>{{ oil.name_en }}</td>
             <td>{{ oil.scientific_name }}</td>
@@ -159,7 +153,8 @@
             <td>{{ oil.notes }}</td>
             <td>
               <a href="{{ url_for('edit', oil_id=oil.id) }}" class="btn btn-sm btn-warning mb-1">編集</a>
-              <a href="{{ url_for('delete', oil_id=oil.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('削除しますか？');">削除</a>
+              <a href="{{ url_for('delete', oil_id=oil.id) }}" class="btn btn-sm btn-danger"
+                 onclick="return confirm('削除しますか？');">削除</a>
             </td>
           </tr>
           {% endfor %}
@@ -170,9 +165,8 @@
 
 </div>
 
-<!-- JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
-<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/choices.js') }}"></script>
 </body>
 </html>

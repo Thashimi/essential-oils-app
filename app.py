@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
-import json
-import os
+import json, os
 
 app = Flask(__name__)
 
@@ -30,33 +29,33 @@ class EssentialOil(db.Model):
     notes = db.Column(db.String(200))    # 複数選択
 
 # -------------------------
-# JSON データ移行関数
+# JSON データ移行
 # -------------------------
-def migrate_json_to_db():
-    DATA_FILE = "essential_oils.json"
+DATA_FILE = "essential_oils.json"
+
+with app.app_context():
+    db.create_all()
     if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, encoding='utf-8') as f:
+        with open(DATA_FILE, encoding="utf-8") as f:
             data = json.load(f)
             for name, info in data.items():
-                # 既に同名データがあればスキップ
-                if EssentialOil.query.filter_by(name_ja=name).first():
-                    continue
-                oil = EssentialOil(
-                    name_ja=name,
-                    name_en=info.get('英名', ''),
-                    scientific_name=info.get('学名', ''),
-                    manufacturer=info.get('メーカー', ''),
-                    volume=info.get('容量', ''),
-                    family=info.get('科名', ''),
-                    origin=",".join(info.get('産地', [])),
-                    parts=",".join(info.get('抽出部位', [])),
-                    method=info.get('抽出方法', ''),
-                    fragrance=info.get('香調', ''),
-                    notes=",".join(info.get('ノート', []))
-                )
-                db.session.add(oil)
+                if not EssentialOil.query.filter_by(name_ja=name).first():
+                    oil = EssentialOil(
+                        name_ja=name,
+                        name_en=info.get("英名",""),
+                        scientific_name=info.get("学名",""),
+                        manufacturer=info.get("メーカー",""),
+                        volume=info.get("容量",""),
+                        family=info.get("科名",""),
+                        origin=",".join(info.get("産地",[])),
+                        parts=",".join(info.get("抽出部位",[])),
+                        method=info.get("抽出方法",""),
+                        fragrance=info.get("香調",""),
+                        notes=",".join(info.get("ノート",[]))
+                    )
+                    db.session.add(oil)
             db.session.commit()
-        print("JSONからSQLiteへのデータ移行完了")
+        print("JSONからSQLiteへデータ移行完了")
 
 # -------------------------
 # 選択肢リスト
@@ -65,6 +64,7 @@ manufacturer_list = ["&SH","9th perfum","AKARZ","Alomalamd","COONA","DR EBERHARD
                      "MIEUXSELECTION","ease","インセント","カリス成城","㈱アメージングクラフト",
                      "㈱バンガン","㈱メドウズアロマテラピープロダクツ","㈱フレーバーライフ",
                      "㈱生々堂","生活の木","無印良品","マンディムーン"]
+
 volume_list = ["1ml","2ml","3ml","5ml","10ml","15ml","30ml","50ml","100ml","200ml"]
 family_list = ["アオイ科","アヤメ科","イネ科","ウルシ科","エゴノキ科","カンラン科","クスノキ科",
                "クマツヅラ科","コショウ科","シソ科","スミレ科","セリ科","ナス科","バンレイシ科",
@@ -86,8 +86,8 @@ note_list = ["トップ","ミドル","ベース"]
 # -------------------------
 @app.route("/", methods=["GET", "POST"])
 def index():
-    if request.method == "POST":
-        original_name = request.form.get("original_name")
+    if request.method=="POST":
+        original_id = request.form.get("original_id")
         name_ja = request.form.get("name_ja")
         name_en = request.form.get("name_en")
         name_lat = request.form.get("name_lat")
@@ -100,8 +100,8 @@ def index():
         fragrance = request.form.get("fragrance")
         notes = ",".join(request.form.getlist("note"))
 
-        if original_name:  # 編集
-            oil = EssentialOil.query.filter_by(name_ja=original_name).first()
+        if original_id:  # 編集
+            oil = EssentialOil.query.get(int(original_id))
             if oil:
                 oil.name_ja = name_ja
                 oil.name_en = name_en
@@ -129,59 +129,54 @@ def index():
                 notes=notes
             )
             db.session.add(oil)
-
         db.session.commit()
         return redirect("/")
 
     oils = EssentialOil.query.all()
-    return render_template(
-        "index.html",
-        oils=oils,
-        manufacturer_list=manufacturer_list,
-        volume_list=volume_list,
-        family_list=family_list,
-        origin_list=origin_list,
-        part_list=part_list,
-        method_list=method_list,
-        fragrance_list=fragrance_list,
-        note_list=note_list
-    )
+    return render_template("index.html",
+                           oils=oils,
+                           manufacturer_list=manufacturer_list,
+                           volume_list=volume_list,
+                           family_list=family_list,
+                           origin_list=origin_list,
+                           part_list=part_list,
+                           method_list=method_list,
+                           fragrance_list=fragrance_list,
+                           note_list=note_list)
 
 # -------------------------
 # 編集
 # -------------------------
 @app.route("/edit/<int:oil_id>")
 def edit(oil_id):
-    oil = EssentialOil.query.get_or_404(oil_id)
-    return render_template(
-        "index.html",
-        oils=EssentialOil.query.all(),
-        manufacturer_list=manufacturer_list,
-        volume_list=volume_list,
-        family_list=family_list,
-        origin_list=origin_list,
-        part_list=part_list,
-        method_list=method_list,
-        fragrance_list=fragrance_list,
-        note_list=note_list,
-        edit_oil=oil
-    )
+    oil = EssentialOil.query.get(oil_id)
+    if oil:
+        return render_template("index.html",
+                               oils=EssentialOil.query.all(),
+                               manufacturer_list=manufacturer_list,
+                               volume_list=volume_list,
+                               family_list=family_list,
+                               origin_list=origin_list,
+                               part_list=part_list,
+                               method_list=method_list,
+                               fragrance_list=fragrance_list,
+                               note_list=note_list,
+                               edit_oil=oil)
+    return redirect("/")
 
 # -------------------------
 # 削除
 # -------------------------
 @app.route("/delete/<int:oil_id>")
 def delete(oil_id):
-    oil = EssentialOil.query.get_or_404(oil_id)
-    db.session.delete(oil)
-    db.session.commit()
+    oil = EssentialOil.query.get(oil_id)
+    if oil:
+        db.session.delete(oil)
+        db.session.commit()
     return redirect("/")
 
 # -------------------------
 # 実行
 # -------------------------
-if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()       # 初回起動時にテーブル作成
-        migrate_json_to_db()  # JSON → SQLite 初回移行
+if __name__=="__main__":
     app.run(host="0.0.0.0", port=10000)

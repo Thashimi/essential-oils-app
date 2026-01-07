@@ -1,21 +1,20 @@
 body {
-  font-family: "Helvetica Neue", Arial, sans-serif;
-  background-color: #f9f9f9;
-}
-
-.card {
-  border-radius: 12px;
+  writing-mode: horizontal-tb; /* 横書き */
+  word-break: normal;
 }
 
 .table-responsive {
   overflow-x: auto;
 }
 
-table {
-  min-width: 1000px;
-  white-space: nowrap;
+.table td, .table th {
+  white-space: nowrap; /* 横スクロール */
+}
+
+.card-header {
+  font-weight: bold;
 }
 
 .multi-select {
-  width: 100% !important;
+  min-width: 150px;
 }
