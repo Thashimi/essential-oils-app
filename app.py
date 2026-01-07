@@ -1,46 +1,85 @@
 from flask import Flask, render_template, request, redirect, url_for
+from flask_sqlalchemy import SQLAlchemy
 import json
 import os
 
 app = Flask(__name__)
+
+# -------------------------
+# データベース設定
+# -------------------------
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///essential_oils.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+# -------------------------
+# モデル定義
+# -------------------------
+class EssentialOil(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name_ja = db.Column(db.String(100), nullable=False)
+    name_en = db.Column(db.String(100))
+    scientific_name = db.Column(db.String(100))
+    manufacturer = db.Column(db.String(100))
+    volume = db.Column(db.String(50))
+    family = db.Column(db.String(100))
+    origin = db.Column(db.String(200))   # 複数選択はカンマ区切り
+    parts = db.Column(db.String(200))    # 複数選択
+    method = db.Column(db.String(100))
+    fragrance = db.Column(db.String(100))
+    notes = db.Column(db.String(200))    # 複数選択
+
+# -------------------------
+# JSON データの初回移行
+# -------------------------
 DATA_FILE = "essential_oils.json"
 
-# JSON読み込み
-if os.path.exists(DATA_FILE):
-    with open(DATA_FILE, "r", encoding="utf-8") as f:
-        try:
-            oils = json.load(f)
-        except json.JSONDecodeError:
-            oils = {}
-else:
-    oils = {}
+with app.app_context():
+    if not os.path.exists('essential_oils.db'):
+        db.create_all()
+        if os.path.exists(DATA_FILE):
+            with open(DATA_FILE, encoding='utf-8') as f:
+                data = json.load(f)
+                for name, info in data.items():
+                    oil = EssentialOil(
+                        name_ja=name,
+                        name_en=info.get('英名', ''),
+                        scientific_name=info.get('学名', ''),
+                        manufacturer=info.get('メーカー', ''),
+                        volume=info.get('容量', ''),
+                        family=info.get('科名', ''),
+                        origin=",".join(info.get('産地', [])),
+                        parts=",".join(info.get('抽出部位', [])),
+                        method=info.get('抽出方法', ''),
+                        fragrance=info.get('香調', ''),
+                        notes=",".join(info.get('ノート', []))
+                    )
+                    db.session.add(oil)
+                db.session.commit()
+            print("JSONからSQLiteへデータ移行完了")
 
+# -------------------------
 # 選択肢リスト
+# -------------------------
 manufacturer_list = ["&SH","9th perfum","AKARZ","Alomalamd","COONA","DR EBERHARDT",
                      "MIEUXSELECTION","ease","インセント","カリス成城","㈱アメージングクラフト",
                      "㈱バンガン","㈱メドウズアロマテラピープロダクツ","㈱フレーバーライフ",
                      "㈱生々堂","生活の木","無印良品","マンディムーン"]
 
 volume_list = ["1ml","2ml","3ml","5ml","10ml","15ml","30ml","50ml","100ml","200ml"]
-
 family_list = ["アオイ科","アヤメ科","イネ科","ウルシ科","エゴノキ科","カンラン科","クスノキ科",
                "クマツヅラ科","コショウ科","シソ科","スミレ科","セリ科","ナス科","バンレイシ科",
                "ヒノキ科","ビャクダン科","フウロソウ科","フトモモ科","マツ科","マメ科","モクセイ科",
                "バラ科","ショウガ科","ニクズク科","ハマビシ科","キク科"]
-
 origin_list = ["ARG","AUS","BGR","BRA","CAN","CHN","ECU","EGY","FRA","GER","HUN",
                "IDN","IND","ITA","JPN","LKA","MAR","MDG","PER","PHL","PRY","SOM",
                "SLV","ESP","TUR","TUN","USA","VNM","ZAF"]
-
 part_list = ["花","花弁","蕾","花穂","葉","新葉","若葉","果皮","果実","種子","果肉",
              "樹皮","根皮","根","樹脂","樹脂球","茎","枝","木部","樹冠","球根",
              "根茎","樹液","樹脂含有部"]
-
 method_list = ["水蒸気蒸留","圧搾法","溶剤抽出","CO2抽出"]
-
 fragrance_list = ["シトラス","ハーバル","スパイシー","フローラル","グリーン",
                   "ウッディ","レジン","アーシー","バルサミック"]
-
 note_list = ["トップ","ミドル","ベース"]
 
 # -------------------------
@@ -48,7 +87,6 @@ note_list = ["トップ","ミドル","ベース"]
 # -------------------------
 @app.route("/", methods=["GET", "POST"])
 def index():
-    global oils
     if request.method == "POST":
         original_name = request.form.get("original_name")
         name_ja = request.form.get("name_ja")
@@ -57,34 +95,45 @@ def index():
         manufacturer = request.form.get("manufacturer")
         volume = request.form.get("volume")
         family = request.form.get("family")
-        origin = request.form.getlist("origin")  # 複数選択
-        part = request.form.getlist("part")      # 複数選択
+        origin = ",".join(request.form.getlist("origin"))
+        part = ",".join(request.form.getlist("part"))
         method = request.form.get("method")
         fragrance = request.form.get("fragrance")
-        note = request.form.getlist("note")      # 複数選択
+        note = ",".join(request.form.getlist("note"))
 
-        # 編集時に名前変更された場合、古いキーを削除
-        if original_name and original_name != name_ja and original_name in oils:
-            oils.pop(original_name)
-
-        oils[name_ja] = {
-            "英名": name_en,
-            "学名": name_lat,
-            "メーカー": manufacturer,
-            "容量": volume,
-            "科名": family,
-            "産地": origin,
-            "抽出部位": part,
-            "抽出方法": method,
-            "香調": fragrance,
-            "ノート": note
-        }
-
-        with open(DATA_FILE, "w", encoding="utf-8") as f:
-            json.dump(oils, f, ensure_ascii=False, indent=2)
-
+        if original_name:  # 編集
+            oil = EssentialOil.query.filter_by(name_ja=original_name).first()
+            if oil:
+                oil.name_ja = name_ja
+                oil.name_en = name_en
+                oil.scientific_name = name_lat
+                oil.manufacturer = manufacturer
+                oil.volume = volume
+                oil.family = family
+                oil.origin = origin
+                oil.parts = part
+                oil.method = method
+                oil.fragrance = fragrance
+                oil.notes = note
+        else:  # 新規登録
+            oil = EssentialOil(
+                name_ja=name_ja,
+                name_en=name_en,
+                scientific_name=name_lat,
+                manufacturer=manufacturer,
+                volume=volume,
+                family=family,
+                origin=origin,
+                parts=part,
+                method=method,
+                fragrance=fragrance,
+                notes=note
+            )
+            db.session.add(oil)
+        db.session.commit()
         return redirect("/")
 
+    oils = EssentialOil.query.all()
     return render_template(
         "index.html",
         oils=oils,
@@ -103,12 +152,11 @@ def index():
 # -------------------------
 @app.route("/edit/<name_ja>")
 def edit(name_ja):
-    global oils
-    if name_ja in oils:
-        oil = oils[name_ja]
+    oil = EssentialOil.query.filter_by(name_ja=name_ja).first()
+    if oil:
         return render_template(
             "index.html",
-            oils=oils,
+            oils=EssentialOil.query.all(),
             manufacturer_list=manufacturer_list,
             volume_list=volume_list,
             family_list=family_list,
@@ -117,7 +165,7 @@ def edit(name_ja):
             method_list=method_list,
             fragrance_list=fragrance_list,
             note_list=note_list,
-            edit_oil={"name": name_ja, **oil}
+            edit_oil=oil
         )
     return redirect("/")
 
@@ -126,12 +174,14 @@ def edit(name_ja):
 # -------------------------
 @app.route("/delete/<name_ja>")
 def delete(name_ja):
-    global oils
-    if name_ja in oils:
-        oils.pop(name_ja)
-        with open(DATA_FILE, "w", encoding="utf-8") as f:
-            json.dump(oils, f, ensure_ascii=False, indent=2)
+    oil = EssentialOil.query.filter_by(name_ja=name_ja).first()
+    if oil:
+        db.session.delete(oil)
+        db.session.commit()
     return redirect("/")
 
+# -------------------------
+# 実行
+# -------------------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
