@@ -2,7 +2,9 @@
 venv/
 __pycache__/
 *.pyc
-essential_oils.json
+*.db
+*.sqlite3
+.DS_Store
 =======
 # Byte-compiled / optimized / DLL files
 __pycache__/

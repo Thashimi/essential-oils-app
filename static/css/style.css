@@ -1,39 +1,21 @@
 body {
-  writing-mode: horizontal-tb; /* 横書き */
-  word-break: normal;
   font-family: "Helvetica Neue", Arial, sans-serif;
-  background-color: #f8f9fa;
+  background-color: #f9f9f9;
 }
 
 .card {
-  border-radius: 0.75rem;
+  border-radius: 12px;
 }
 
 .table-responsive {
   overflow-x: auto;
 }
 
-.table th, .table td {
+table {
+  min-width: 1000px;
   white-space: nowrap;
 }
 
-.btn-primary {
-  background: linear-gradient(45deg, #007bff, #00c6ff);
-  border: none;
-}
-
-.btn-warning {
-  background: linear-gradient(45deg, #ffc107, #ff85a2);
-  border: none;
-  color: #fff;
-}
-
-.btn-danger {
-  background: linear-gradient(45deg, #dc3545, #ff6b81);
-  border: none;
-  color: #fff;
-}
-
-.choices__inner {
-  min-width: 100px;
+.multi-select {
+  width: 100% !important;
 }

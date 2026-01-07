@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>精油管理アプリ</title>
 
-  <!-- Bootstrap CDN -->
+  <!-- Bootstrap -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
-  <!-- Choices.js CDN -->
+  <!-- Choices.js -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
 
   <!-- カスタムCSS -->
@@ -73,8 +73,7 @@
             <label class="form-label">産地（複数選択可）</label>
             <select class="form-select multi-select" name="origin" multiple>
               {% for o in origin_list %}
-                <option value="{{ o }}"
-                {% if edit_oil and o in (edit_oil.origin.split(',') if edit_oil.origin else []) %}selected{% endif %}>{{ o }}</option>
+                <option value="{{ o }}" {% if edit_oil and o in (edit_oil.origin.split(',') if edit_oil.origin else []) %}selected{% endif %}>{{ o }}</option>
               {% endfor %}
             </select>
           </div>
@@ -83,8 +82,7 @@
             <label class="form-label">抽出部位（複数選択可）</label>
             <select class="form-select multi-select" name="part" multiple>
               {% for p in part_list %}
-                <option value="{{ p }}"
-                {% if edit_oil and p in (edit_oil.parts.split(',') if edit_oil.parts else []) %}selected{% endif %}>{{ p }}</option>
+                <option value="{{ p }}" {% if edit_oil and p in (edit_oil.parts.split(',') if edit_oil.parts else []) %}selected{% endif %}>{{ p }}</option>
               {% endfor %}
             </select>
           </div>
@@ -111,8 +109,7 @@
             <label class="form-label">ノート（複数選択可）</label>
             <select class="form-select multi-select" name="note" multiple>
               {% for n in note_list %}
-                <option value="{{ n }}"
-                {% if edit_oil and n in (edit_oil.notes.split(',') if edit_oil.notes else []) %}selected{% endif %}>{{ n }}</option>
+                <option value="{{ n }}" {% if edit_oil and n in (edit_oil.notes.split(',') if edit_oil.notes else []) %}selected{% endif %}>{{ n }}</option>
               {% endfor %}
             </select>
           </div>
@@ -155,14 +152,14 @@
             <td>{{ oil.manufacturer }}</td>
             <td>{{ oil.volume }}</td>
             <td>{{ oil.family }}</td>
-            <td>{{ oil.origin.split(',') | join(', ') }}</td>
-            <td>{{ oil.parts.split(',') | join(', ') }}</td>
+            <td>{{ oil.origin }}</td>
+            <td>{{ oil.parts }}</td>
             <td>{{ oil.method }}</td>
             <td>{{ oil.fragrance }}</td>
-            <td>{{ oil.notes.split(',') | join(', ') }}</td>
+            <td>{{ oil.notes }}</td>
             <td>
-              <a href="{{ url_for('edit', name_ja=oil.name_ja) }}" class="btn btn-sm btn-warning mb-1">編集</a>
-              <a href="{{ url_for('delete', name_ja=oil.name_ja) }}" class="btn btn-sm btn-danger" onclick="return confirm('削除しますか？');">削除</a>
+              <a href="{{ url_for('edit', oil_id=oil.id) }}" class="btn btn-sm btn-warning mb-1">編集</a>
+              <a href="{{ url_for('delete', oil_id=oil.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('削除しますか？');">削除</a>
             </td>
           </tr>
           {% endfor %}
@@ -173,12 +170,9 @@
 
 </div>
 
-<!-- Bootstrap JS -->
+<!-- JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<!-- Choices.js -->
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
-<!-- カスタムJS -->
-<script src="{{ url_for('static', filename='js/choices.js') }}"></script>
-
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

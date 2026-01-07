@@ -30,33 +30,33 @@ class EssentialOil(db.Model):
     notes = db.Column(db.String(200))    # 複数選択
 
 # -------------------------
-# JSON データの初回移行
+# JSON データ移行関数
 # -------------------------
-DATA_FILE = "essential_oils.json"
-
-with app.app_context():
-    if not os.path.exists('essential_oils.db'):
-        db.create_all()
-        if os.path.exists(DATA_FILE):
-            with open(DATA_FILE, encoding='utf-8') as f:
-                data = json.load(f)
-                for name, info in data.items():
-                    oil = EssentialOil(
-                        name_ja=name,
-                        name_en=info.get('英名', ''),
-                        scientific_name=info.get('学名', ''),
-                        manufacturer=info.get('メーカー', ''),
-                        volume=info.get('容量', ''),
-                        family=info.get('科名', ''),
-                        origin=",".join(info.get('産地', [])),
-                        parts=",".join(info.get('抽出部位', [])),
-                        method=info.get('抽出方法', ''),
-                        fragrance=info.get('香調', ''),
-                        notes=",".join(info.get('ノート', []))
-                    )
-                    db.session.add(oil)
-                db.session.commit()
-            print("JSONからSQLiteへデータ移行完了")
+def migrate_json_to_db():
+    DATA_FILE = "essential_oils.json"
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, encoding='utf-8') as f:
+            data = json.load(f)
+            for name, info in data.items():
+                # 既に同名データがあればスキップ
+                if EssentialOil.query.filter_by(name_ja=name).first():
+                    continue
+                oil = EssentialOil(
+                    name_ja=name,
+                    name_en=info.get('英名', ''),
+                    scientific_name=info.get('学名', ''),
+                    manufacturer=info.get('メーカー', ''),
+                    volume=info.get('容量', ''),
+                    family=info.get('科名', ''),
+                    origin=",".join(info.get('産地', [])),
+                    parts=",".join(info.get('抽出部位', [])),
+                    method=info.get('抽出方法', ''),
+                    fragrance=info.get('香調', ''),
+                    notes=",".join(info.get('ノート', []))
+                )
+                db.session.add(oil)
+            db.session.commit()
+        print("JSONからSQLiteへのデータ移行完了")
 
 # -------------------------
 # 選択肢リスト
@@ -65,7 +65,6 @@ manufacturer_list = ["&SH","9th perfum","AKARZ","Alomalamd","COONA","DR EBERHARD
                      "MIEUXSELECTION","ease","インセント","カリス成城","㈱アメージングクラフト",
                      "㈱バンガン","㈱メドウズアロマテラピープロダクツ","㈱フレーバーライフ",
                      "㈱生々堂","生活の木","無印良品","マンディムーン"]
-
 volume_list = ["1ml","2ml","3ml","5ml","10ml","15ml","30ml","50ml","100ml","200ml"]
 family_list = ["アオイ科","アヤメ科","イネ科","ウルシ科","エゴノキ科","カンラン科","クスノキ科",
                "クマツヅラ科","コショウ科","シソ科","スミレ科","セリ科","ナス科","バンレイシ科",
@@ -96,10 +95,10 @@ def index():
         volume = request.form.get("volume")
         family = request.form.get("family")
         origin = ",".join(request.form.getlist("origin"))
-        part = ",".join(request.form.getlist("part"))
+        parts = ",".join(request.form.getlist("part"))
         method = request.form.get("method")
         fragrance = request.form.get("fragrance")
-        note = ",".join(request.form.getlist("note"))
+        notes = ",".join(request.form.getlist("note"))
 
         if original_name:  # 編集
             oil = EssentialOil.query.filter_by(name_ja=original_name).first()
@@ -111,11 +110,11 @@ def index():
                 oil.volume = volume
                 oil.family = family
                 oil.origin = origin
-                oil.parts = part
+                oil.parts = parts
                 oil.method = method
                 oil.fragrance = fragrance
-                oil.notes = note
-        else:  # 新規登録
+                oil.notes = notes
+        else:  # 新規
             oil = EssentialOil(
                 name_ja=name_ja,
                 name_en=name_en,
@@ -124,12 +123,13 @@ def index():
                 volume=volume,
                 family=family,
                 origin=origin,
-                parts=part,
+                parts=parts,
                 method=method,
                 fragrance=fragrance,
-                notes=note
+                notes=notes
             )
             db.session.add(oil)
+
         db.session.commit()
         return redirect("/")
 
@@ -150,38 +150,38 @@ def index():
 # -------------------------
 # 編集
 # -------------------------
-@app.route("/edit/<name_ja>")
-def edit(name_ja):
-    oil = EssentialOil.query.filter_by(name_ja=name_ja).first()
-    if oil:
-        return render_template(
-            "index.html",
-            oils=EssentialOil.query.all(),
-            manufacturer_list=manufacturer_list,
-            volume_list=volume_list,
-            family_list=family_list,
-            origin_list=origin_list,
-            part_list=part_list,
-            method_list=method_list,
-            fragrance_list=fragrance_list,
-            note_list=note_list,
-            edit_oil=oil
-        )
-    return redirect("/")
+@app.route("/edit/<int:oil_id>")
+def edit(oil_id):
+    oil = EssentialOil.query.get_or_404(oil_id)
+    return render_template(
+        "index.html",
+        oils=EssentialOil.query.all(),
+        manufacturer_list=manufacturer_list,
+        volume_list=volume_list,
+        family_list=family_list,
+        origin_list=origin_list,
+        part_list=part_list,
+        method_list=method_list,
+        fragrance_list=fragrance_list,
+        note_list=note_list,
+        edit_oil=oil
+    )
 
 # -------------------------
 # 削除
 # -------------------------
-@app.route("/delete/<name_ja>")
-def delete(name_ja):
-    oil = EssentialOil.query.filter_by(name_ja=name_ja).first()
-    if oil:
-        db.session.delete(oil)
-        db.session.commit()
+@app.route("/delete/<int:oil_id>")
+def delete(oil_id):
+    oil = EssentialOil.query.get_or_404(oil_id)
+    db.session.delete(oil)
+    db.session.commit()
     return redirect("/")
 
 # -------------------------
 # 実行
 # -------------------------
 if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()       # 初回起動時にテーブル作成
+        migrate_json_to_db()  # JSON → SQLite 初回移行
     app.run(host="0.0.0.0", port=10000)
